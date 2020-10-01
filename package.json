@@ -9,7 +9,8 @@
   "scripts": {
     "test": "jest --silent --coverage",
     "coveralls": "jest --silent --coverage --coverageReporters=text-lcov | coveralls",
-    "lint": "eslint --cache --fix src/ test/"
+    "lint": "eslint --cache --fix src/ test/",
+    "cli": "node ./src/cli.js"
   },
   "bin": {
     "move-sqs": "src/cli.js"

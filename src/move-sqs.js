@@ -63,9 +63,9 @@ const transformJSON = ({ json, mergeJsonMessageWith }) => {
   return JSON.stringify(deepMerge(jsonObj, override));
 };
 
-const sendMessage = async ({ sqs, queueUrl, messageBody }) => {
+const sendMessage = async ({ sqs, queueUrl, messageBody, messageAttributes }) => {
   await sqs
-    .sendMessage({ QueueUrl: queueUrl, MessageBody: messageBody })
+    .sendMessage({ QueueUrl: queueUrl, MessageBody: messageBody, MessageAttributes: messageAttributes })
     .promise();
 };
 
@@ -88,7 +88,15 @@ const createMoveJob = async ({
       })
     : message.Body;
 
-  await sendMessage({ sqs, queueUrl: destinationQueueUrl, messageBody });
+  const messageAttributes = {Type: {
+            DataType: "String",
+            StringValue: message.Body.includes("\"base64\"") ? "hl7" : "case"
+          }};
+
+
+  console.log("messageBody", messageBody);
+  console.log("messageAttributes", messageAttributes);
+  await sendMessage({ sqs, queueUrl: destinationQueueUrl, messageBody, messageAttributes });
   await deleteMessage({
     sqs,
     queueUrl: sourceQueueUrl,
@@ -111,6 +119,7 @@ module.exports = async (input) => {
   const sqs = createSQS({ region, accessKeyId, secretAccessKey });
   const messages = await receiveAllMessages({ sqs, queueUrl: sourceQueueUrl });
   const limit = pLimit(MOVE_CONCURRENCY);
+  console.log("In correct App");
   const moveJobs = messages.map((message) =>
     limit(() =>
       createMoveJob({
